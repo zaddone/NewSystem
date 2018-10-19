@@ -1,0 +1,77 @@
+{{define "footer"}}
+	<footer class="footer">
+	<div class="container">
+	<span class="text-muted">show me the memony.</span>
+	</div>
+	</footer>
+
+	<script src="https://code.jquery.com/jquery-3.2.1.min.js" ></script>
+	<script>window.jQuery || document.write('<script src="https://code.jquery.com/jquery-min.js"><\/script>')</script>
+
+	<script src="https://v4.bootcss.com/assets/js/vendor/popper.min.js"></script>
+	<script src="https://v4.bootcss.com/dist/js/bootstrap.min.js"></script>
+	<script>
+
+	$(function(){	
+		$("#save").click(function(){
+		    //alert($("#site_edit").serialize());
+		    $.post("/form_post",$("#site_edit").serialize(),
+		    function(data,status){
+		      alert("状态：" + status);
+		       //location.reload();
+		window.location.href="/"
+		    });
+		 });
+	
+	});
+	</script>
+
+	<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true" >
+	  <div class="modal-dialog modal-lg" role="document">
+	    <div class="modal-content">
+	      <div class="modal-header">
+		<h5 class="modal-title" id="exampleModalLabel">site info</h5>
+		<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+		  <span aria-hidden="true">&times;</span>
+		</button>
+	      </div>
+	      <div class="modal-body">	
+		<form id="site_edit">
+		  <div class="form-group">
+		    <input class="form-control" type="text" id="name" name="name" placeholder="site name">
+		  </div>
+		  <div class="form-group">
+		    <input class="form-control" type="text" id="addr" name="addr" placeholder="http://www.ccgp-sichuan.gov.cn/CmsNewsController.do?page=1">
+		  </div>
+		  <div class="form-group">
+		    <input class="form-control" type="text" id="page" name="page" placeholder="page">
+		  </div>
+	          <div class="form-group">
+		    <input class="form-control" type="text" id="pcount" name="pcount" placeholder="360">
+		  </div>
+		  <div class="form-group">
+		    <input class="form-control" type="text" id="raw" name="raw" placeholder=".list-info .info li">
+		  </div>
+		  <div class="form-group">
+		    <input class="form-control" type="text" id="datetext" name="date_text" placeholder=".time.curr|text">
+		  </div>
+		  <div class="form-group">
+		    <input class="form-control" type="text" id="dateformat" name="date_format" placeholder="022006-01">
+		  </div>
+		  <div class="form-group">
+		    <input class="form-control" type="text" id="urltext" name="url_text" placeholder="a|href">
+		  </div>		
+		  <div class="form-group">
+		    <input class="form-control" type="text" id="titletext" name="title_text" placeholder="a .title|text">
+		  </div>
+		  <input type="hidden" id="id" name="id" value="0" >
+		</form>
+	      </div>
+	      <div class="modal-footer">
+		<button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+		<button type="button" class="btn btn-primary" id="save">Save</button>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+{{end}}

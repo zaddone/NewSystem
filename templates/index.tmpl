@@ -1,0 +1,71 @@
+{{define "index.tmpl"}}
+<!doctype html>
+<html lang="en">
+{{template "head" .}}
+  <body>
+    {{template "top" .}}
+    <main role="main" class="container">
+	<div class="container msg">
+	<div class="row">
+	 {{range .}}
+	<div class="col-6" id="col{{.Id}}">
+	<div class="card" >
+	  <div class="card-body">
+	    <h5 class="card-title" id="name">{{.Name}}</h5>
+	    <h6 class="card-subtitle mb-2 text-muted" id="addr">{{.Addr}}</h6>
+	    <p class="card-text" >
+		<span class="badge badge-secondary" id="page">{{.Page}}</span>
+		<span class="badge badge-secondary" id="pcount">{{.PCount}}</span>
+		<span class="badge badge-secondary" id="raw">{{.Raw}}</span>
+		<span class="badge badge-secondary" id="datetext">{{.DateText}}</span>
+		<span class="badge badge-secondary" id="dateformat">{{.DateFormat}}</span>
+		<span class="badge badge-secondary" id="urltext">{{.UrlText}}</span>
+		<span class="badge badge-secondary" id="titletext">{{.TitleText}}</span>
+	    </p>
+		
+	    <a href="#" class="btn btn-secondary" data-toggle="modal" data-target="#exampleModal" data-id="{{.Id}}">edit</a>
+	    <a href="javascript:void(0)" onclick="RunSite({{.Id}})" class="btn btn-secondary">run</a>
+	    <a href="/show?site={{.Id}}"  class="btn btn-secondary">show</a>
+	  </div>
+	</div>
+
+	</div>
+	 {{end}}
+	</div>
+	</div>	    
+    </main>
+
+    {{template "footer" .}}
+	<script>
+	$('#exampleModal').on('show.bs.modal', function (event) {
+		var modal = $(this);
+		var id = $(event.relatedTarget).data('id');
+		var card = $('#col'+id);
+		modal.find('#id').val(id);
+		modal.find('#addr').val(card.find('#addr').text());
+		modal.find('#name').val(card.find('#name').text());
+		modal.find('#page').val(card.find('#page').text());
+		modal.find('#pcount').val(card.find('#pcount').text());
+		modal.find('#raw').val(card.find('#raw').text());
+		modal.find('#datetext').val(card.find('#datetext').text());
+		modal.find('#dateformat').val(card.find('#dateformat').text());
+		modal.find('#urltext').val(card.find('#urltext').text()); 
+		modal.find('#titletext').val(card.find('#titletext').text()); 
+	})
+	function RunSite(id){
+		$.ajax({
+			type: "POST",
+			url: '/run/'+id,
+			//data: data,
+			dataType: "json",
+			error: function(){alert('Error');},
+			success: function(result){
+				$(".alert").alert('close')
+				$('.msg').prepend('<div class="alert alert-success alert-dismissible fade show" role="alert">'+result+' <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>');
+			}
+		});
+	}
+	</script>
+  </body>
+</html>
+{{end}}
