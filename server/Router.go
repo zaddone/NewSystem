@@ -6,6 +6,7 @@ import(
 	"database/sql"
 	"strings"
 	"log"
+	"fmt"
 )
 
 func loadRouter(){
@@ -104,10 +105,19 @@ func loadRouter(){
 		case "json":
 			var where []string
 			var val []interface{}
-			site,err := strconv.Atoi(c.Query("site"))
-			if (err == nil) && (site > 0) {
-				where = append(where,"site = ?")
-				val = append(val,site)
+
+			var w []string
+			for _,_s := range c.QueryArray("site"){
+				_i,err := strconv.Atoi(_s)
+				if err != nil {
+					c.JSON(http.StatusNotFound,err.Error())
+				}
+				val = append(val,_i)
+				w = append(w,"?")
+			}
+			if len(w) > 0 {
+				where = append(where,fmt.Sprintf("site in (%s)",strings.Join(w,",")))
+				//val = append(val,site)
 			}
 			ens,err:=GetEntryArr(c,where,val)
 			if err != nil {
@@ -134,11 +144,11 @@ func GetEntryArr(c *gin.Context,where []string,val []interface{}) (ens []*Entry,
 	if err != nil {
 		return nil,err
 	}
-	begin,err := strconv.Atoi(c.DefaultQuery("base_begin","0"))
+	begin,err := strconv.Atoi(c.DefaultQuery("begin","0"))
 	if err != nil {
 		return nil,err
 	}
-	end,err := strconv.Atoi(c.DefaultQuery("base_end","0"))
+	end,err := strconv.Atoi(c.DefaultQuery("end","0"))
 	if err != nil {
 		return nil,err
 	}

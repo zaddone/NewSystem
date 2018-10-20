@@ -5,57 +5,27 @@
 	</div>
 	</footer>
 
+	
 	<script src="https://code.jquery.com/jquery-3.2.1.min.js" ></script>
 	<script>window.jQuery || document.write('<script src="https://code.jquery.com/jquery-min.js"><\/script>')</script>
 
 	<script src="https://v4.bootcss.com/assets/js/vendor/popper.min.js"></script>
 	<script src="https://v4.bootcss.com/dist/js/bootstrap.min.js"></script>
 	<script src="static/js/bootstrap-select.js"></script>
-	<script>
 	
-	$(function(){
-		var sitesMap = new Map();
-		$.getJSON('/sites',{'content_type':'json'},function(data) {
-		//console.log(data );
-		data.forEach(function(db){
-			sitesMap.set(db.Id,db)
-			$('#site_show').after('<a class="dropdown-item edit_site" data-id="'+db.Id+'" href="#" role="button" data-toggle="modal" data-target="#exampleModal">'+db.name+'</a>');
-			//console.log(db.name );
-		})
-			
-		});
-		$("#save").click(function(){
-		    //alert($("#site_edit").serialize());
-		    $.post("/form_post",$("#site_edit").serialize(),
-		    function(data,status){
-		      alert("状态：" + status);
-		      location.reload();
-		      //window.location.href="/"
-		    });
-		 });
-		$('.edit_site').on('show.bs.modal', function (event) {
-			var modal = $(this);
-			db =sitesMap.get( $(event.relatedTarget).data('id'));
-			var card = $('#col'+db.Id);
-			modal.find('#id').val(db.Id);
-			modal.find('#addr').val(db.addr);
-			modal.find('#name').val(db.name);
-			modal.find('#page').val(db.page);
-			modal.find('#pcount').val(db.pcount);
-			modal.find('#raw').val(db.raw);
-			modal.find('#datetext').val(db.datetext);
-			modal.find('#dateformat').val(db.dateformat);
-			modal.find('#urltext').val(db.urltext); 
-			modal.find('#titletext').val(db.titletext); 
-		})
-	});
-	</script>
 	<div class="modal fade bd-example-modal-lg"  id="searchModal" tabindex="-1" role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true">
 	  <div class="modal-dialog modal-lg">
 	    <div class="modal-content">
-		<form  >
+		<form id="search_form" action="/" method="get" >
+		<input type="hidden" name="limit"  value=20>
+		<input type="hidden" name="offset"  value=0 >
+		<input type="hidden" name="begin" id="beginDate" value=0>
+		<input type="hidden" name="end"  id="endDate"  value=0 >
 		<div class="modal-header">
-		<h5 class="modal-title" id="exampleModalLabel">Search</h5>
+		<div class="form-group">
+		  <select class="selectpicker" id="siteselect" name="site" multiple data-live-search="true" data-live-search-placeholder="Search" >	
+		  </select>
+		</div>
 		<button type="button" class="close" data-dismiss="modal" aria-label="Close">
 		  <span aria-hidden="true">&times;</span>
 		</button>
@@ -64,46 +34,26 @@
 		    <div class="form-row">
 		        <div class="input-group col-md-6   form-control-sm">
 			  <div class="input-group-prepend">
-			    <span class="input-group-text" id="">begin</span>
+			    <span class="input-group-text" >begin</span>
 			  </div>
-			  <input type="date" id="begin"  class="form-control">
+			  <input type="date" id="begin" class="form-control">
 			</div>
 
 			<div class="input-group col-md-6   form-control-sm">
 			  <div class="input-group-prepend">
-			    <span class="input-group-text" id="">end</span>
+			    <span class="input-group-text"  >end</span>
 			  </div>
-			  <input type="date" id="end"  class="form-control">
+			  <input type="date" id="end" class="form-control" >
 			</div>
 		    </div>
 		</div>
 		<div class="modal-footer form-inline">
-		  <div class="form-group">		    
-		    <select class="form-control" id="exampleFormControlSelect1">
-			<option selected value=1 >or</option>
-		      	<option value=2 >and</option>
-		    </select>
-		  </div> 
 		<div class="form-group">
-		  <select class="selectpicker" multiple data-live-search="true" data-live-search-placeholder="Search" data-actions-box="true">
-		    <optgroup label="filter1">
+		  <select class="selectpicker" multiple data-live-search="true" data-live-search-placeholder="Search">		    
 		      <option>option1</option>
 		      <option>option2</option>
 		      <option>option3</option>
-		      <option>option4</option>
-		    </optgroup>
-		    <optgroup label="filter2">
-		      <option>option1</option>
-		      <option>option2</option>
-		      <option>option3</option>
-		      <option>option4</option>
-		    </optgroup>
-		    <optgroup label="filter3">
-		      <option>option1</option>
-		      <option>option2</option>
-		      <option>option3</option>
-		      <option>option4</option>
-		    </optgroup>
+		      <option>option4</option>		     
 		  </select>
 		</div>
 
@@ -111,7 +61,7 @@
 		  <input type="text" class="form-control" placeholder="Search" name="q">
 
 		  <div class="input-group-btn">
-		    <button class="btn btn-dark" type="submit"><i class="fa fa-search"></i></button>
+		    <button class="btn btn-dark" id="submit_button" ><i class="fa fa-search"></i></button>
 		  </div>
 		</div>
 
@@ -170,4 +120,121 @@
 	    </div>
 	  </div>
 	</div>
+<script>
+	function getUrlVal(para){ 
+		var search=location.search; 
+		var arrPara=new Array();
+		var arrVal=new Array();
+		if(search!=""){
+			var index=0; search=search.substr(1);
+			arrPara=search.split("&"); 
+			for(i in arrPara){ 
+				var paraPre=para+"="; 
+				if(arrPara[i].indexOf(paraPre)==0 && paraPre.length < arrPara[i].length){
+					arrVal[index]=decodeURI(arrPara[i].substr(paraPre.length)); 
+					index++; 
+				}
+			} 
+		}
+		if(arrVal.length==1){ 
+			return arrVal[0]; 
+		}else if(arrVal.length==0){ 
+			return null; 
+		}else{ 
+			return arrVal; 
+		}
+	}
+
+	Date.prototype.format = function(format) {
+		var date = { "M+": this.getMonth() + 1, "d+": this.getDate(), "h+": this.getHours(), "m+": this.getMinutes(), "s+": this.getSeconds(), "q+": Math.floor((this.getMonth() + 3) / 3), "S+": this.getMilliseconds() }; 
+		if (/(y+)/i.test(format)) { 
+			format = format.replace(RegExp.$1, (this.getFullYear() + '').substr(4 - RegExp.$1.length));
+		} 
+		for (var k in date) { 
+			if (new RegExp("(" + k + ")").test(format)) { 
+				format = format.replace(RegExp.$1, RegExp.$1.length == 1 ? date[k] : ("00" + date[k]).substr(("" + date[k]).length));
+			} 
+		} 
+		return format; 
+	}
+
+	$(function(){
+
+		
+		//console.log(getUrlVal('site') );
+		var sitesMap = new Map();
+		$.getJSON('/sites',{'content_type':'json'},function(data) {
+			data.forEach(function(db){
+				sitesMap.set(db.Id,db)
+				$('#site_show').after('<a class="dropdown-item edit_site" data-id="'+db.Id+'" href="#" role="button" data-toggle="modal" data-target="#exampleModal">'+db.name+'</a>');				
+				$('#siteselect').append('<option value='+db.Id+'>'+db.name+'</option>'); 				
+			})
+			 
+			$('#siteselect').selectpicker('val',getUrlVal('site'));
+			 
+			$('#siteselect').selectpicker('refresh');
+			
+		});
+		//$('#siteselect').selectpicker('refresh');
+		//$('#siteselect').selectpicker('val', 1);
+		$("#save").click(function(){
+		    //alert($("#site_edit").serialize());
+		    $.post("/form_post",$("#site_edit").serialize(),
+		    function(data,status){
+		      alert("状态：" + status);
+		      location.reload();
+		      //window.location.href="/"
+		    });
+		 });
+		$('.edit_site').on('show.bs.modal', function (event) {
+			var modal = $(this);
+			db =sitesMap.get( $(event.relatedTarget).data('id'));
+			var card = $('#col'+db.Id);
+			modal.find('#id').val(db.Id);
+			modal.find('#addr').val(db.addr);
+			modal.find('#name').val(db.name);
+			modal.find('#page').val(db.page);
+			modal.find('#pcount').val(db.pcount);
+			modal.find('#raw').val(db.raw);
+			modal.find('#datetext').val(db.datetext);
+			modal.find('#dateformat').val(db.dateformat);
+			modal.find('#urltext').val(db.urltext); 
+			modal.find('#titletext').val(db.titletext); 
+		})
+		//$("#search_form").submit(function(e){
+			//console.log($("#search_form").serialize());
+			//$("#site_edit").serialize()
+		  	//alert("Submitted");
+		//});
+		$("#submit_button").click(function(){
+			var begin = $("#begin").val();
+			if (begin){
+				$('#beginDate').val((new Date(begin.split("-"))).getTime()/1000);
+			}else{
+				$('#beginDate').val(0);
+			}
+			var end = $("#end").val();
+			if (end){
+				$('#endDate').val((new Date(end.split("-"))).getTime()/1000);
+			}else{
+				$('#endDate').val(0);
+			}
+			$('#offset').val(0);
+			//alert($("#search_form").serialize());
+    			$("#search_form").submit();
+  		});  
+		var be = getUrlVal('begin');
+		var en = getUrlVal('end');
+		$('#beginDate').val(be);
+		$('#endDate').val(en);
+		if (be>0){
+			$('#begin').val((new Date($('#beginDate').val()*1000)).format("yyyy-MM-dd"));
+		}
+		if (en>0){
+			$('#end').val((new Date($('#endDate').val()*1000)).format("yyyy-MM-dd"));
+		}
+
+	});
+	</script>
+	
 {{end}}
