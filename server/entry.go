@@ -41,13 +41,14 @@ func (self *Entry) LoadDB(id int64,db *sql.DB) (err error) {
 
 func ReadEntry(hand func(*Entry) error,where string,val ...interface{}) error {
 	sql_ := "SELECT id,title,url,baseTime,beginTime,endTime,site FROM entry " + where + ";"
-	var en Entry
+	var en *Entry
 	return HandDBForBack(Conf.DbPath,func(db *sql.DB)error{
-		row,err := db.Query(sql_,val)
+		row,err := db.Query(sql_,val...)
 		if err != nil {
 			return err
 		}
 		for row.Next() {
+			en = &Entry{}
 			err = row.Scan(
 				&en.Id,
 				&en.Title,
@@ -59,7 +60,7 @@ func ReadEntry(hand func(*Entry) error,where string,val ...interface{}) error {
 			if err != nil {
 				return err
 			}
-			err = hand(&en)
+			err = hand(en)
 			if err != nil {
 				return err
 			}

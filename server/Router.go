@@ -5,11 +5,12 @@ import(
 	"strconv"
 	"database/sql"
 	"strings"
-	//"log"
+	"log"
 )
 
 func loadRouter(){
 	Router = gin.Default()
+	Router.Static("/static","./static")
 	Router.LoadHTMLGlob(Conf.Templates)
 	Router.POST("/form_post",func(c *gin.Context){
 		pcount,err :=strconv.Atoi(c.PostForm("pcount"))
@@ -52,6 +53,30 @@ func loadRouter(){
 			return
 		}()))
 	})
+	Router.GET("/sites",func(c *gin.Context){
+		switch c.Query("content_type"){
+		case "json":
+			c.JSON(http.StatusOK,
+			(func() (sites []*SitePage) {
+				ReadSitePage(func(s *SitePage){
+					//log.Println(s.Id,s.Name)
+					sites = append(sites,s)
+				})
+				return
+			}()))
+
+		default:
+			c.HTML(http.StatusOK,
+			"sites.tmpl",
+			(func() (sites []*SitePage) {
+				ReadSitePage(func(s *SitePage){
+					//log.Println(s.Id,s.Name)
+					sites = append(sites,s)
+				})
+				return
+			}()))
+		}
+	})
 	Router.POST("/run/:id",func(c *gin.Context){
 		id,err := strconv.Atoi(c.Param("id"))
 		if err != nil {
@@ -74,33 +99,6 @@ func loadRouter(){
 		c.JSON(http.StatusOK, "Now run")
 		return
 	})
-	Router.GET("/show/:id",func(c *gin.Context){
-		id,err := strconv.Atoi(c.Param("id"))
-		if err != nil {
-			c.JSON(http.StatusNotFound,err.Error())
-			return
-		}
-		switch c.Query("content_type"){
-		case "json":
-			var where []string
-			var val []interface{}
-			where = append(where,"site = ?")
-			val = append(val,id)
-			ens,err:=GetEntryArr(c,where,val)
-			if err != nil {
-				c.JSON(http.StatusNotFound,err.Error())
-				return
-			}
-			c.JSON(http.StatusOK, gin.H{"ens":ens})
-			return
-		default:
-			c.HTML(http.StatusOK,
-			"show.tmpl",
-			gin.H{"site":id})
-			return
-		}
-
-	})
 	Router.GET("/show",func(c *gin.Context){
 		switch c.Query("content_type"){
 		case "json":
@@ -120,9 +118,8 @@ func loadRouter(){
 			return
 
 		default:
-			c.HTML(http.StatusOK,
-			"show.tmpl",
-			gin.H{"site":0})
+			c.JSON(http.StatusNotFound,nil)
+			//c.HTML(http.StatusOK,"show.tmpl",nil)
 			return
 		}
 	})
@@ -159,6 +156,7 @@ func GetEntryArr(c *gin.Context,where []string,val []interface{}) (ens []*Entry,
 		sql_ = " WHERE " + strings.Join(where," and ")
 	}
 	sql_ += " LIMIT ? OFFSET ?"
+	log.Println(sql_,val)
 	err = ReadEntry(func(en *Entry)error{
 		ens = append(ens,en)
 		return nil
