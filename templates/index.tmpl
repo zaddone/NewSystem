@@ -23,7 +23,8 @@
   <tbody id="entrylist"> 
   
   </tbody>
-</table>	
+</table>
+	
 </div>
  
 </div>	    
@@ -32,23 +33,33 @@
 
 
 <script>
-function GetDB(limit,offset){
-	$.getJSON('/show',{'content_type':'json','limit':limit,'offset':offset},function(data) {
-		console.log(data );
+function GetDB(){
+	if (!UrlRequest){
+		UrlRequest =RequestHand($("#search_form").serialize());
+	}
+	//console.log(UrlRequest)
+	$.getJSON('/show',UrlRequest,function(data) {
+		//console.log(data );
+		var count = $('#offset').val();
 		data.ens.forEach(function(db){
 			var date = new Date(db.baseTime*1000)
 			$('#entrylist').append('<tr><th scope="row">'+date.toLocaleDateString()+'</th><td><a target="_BLANK" href="'+db.url+'">'+db.title+'</a></td><td></td></tr>');
+			count++;
 		});
+		$('#offset').val(count);
 	});
 }
 
 
 $(function(){
+	GetDB();
+	$(window).scroll(function() {
+		if ($(document).scrollTop() >= $(document).height() - $(window).height()) {
+			UrlRequest =RequestHand($("#search_form").serialize());
+			GetDB();		
+		}
+	});
 
-
-	//$('header nav #navbarCollapse').append($('#search').html());
-	//$('#search').remove(); 
-	GetDB(20,0);
  });
 </script>
 

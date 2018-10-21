@@ -13,6 +13,17 @@ func loadRouter(){
 	Router = gin.Default()
 	Router.Static("/static","./static")
 	Router.LoadHTMLGlob(Conf.Templates)
+	Router.GET("/",func(c *gin.Context){
+		c.HTML(http.StatusOK,
+		"index.tmpl",
+		(func() (sites []*SitePage) {
+			ReadSitePage(func(s *SitePage){
+				//log.Println(s.Id,s.Name)
+				sites = append(sites,s)
+			})
+			return
+		}()))
+	})
 	Router.POST("/form_post",func(c *gin.Context){
 		pcount,err :=strconv.Atoi(c.PostForm("pcount"))
 		if err != nil {
@@ -42,17 +53,6 @@ func loadRouter(){
 		}
 		c.JSON(http.StatusOK,si)
 
-	})
-	Router.GET("/",func(c *gin.Context){
-		c.HTML(http.StatusOK,
-		"index.tmpl",
-		(func() (sites []*SitePage) {
-			ReadSitePage(func(s *SitePage){
-				//log.Println(s.Id,s.Name)
-				sites = append(sites,s)
-			})
-			return
-		}()))
 	})
 	Router.GET("/sites",func(c *gin.Context){
 		switch c.Query("content_type"){
@@ -100,9 +100,12 @@ func loadRouter(){
 		c.JSON(http.StatusOK, "Now run")
 		return
 	})
+	Router.GET("/down",func(c *gin.Context){
+		c.Redirect(http.StatusMovedPermanently, "/static/js/bootstrap-select.js.map")
+	})
 	Router.GET("/show",func(c *gin.Context){
-		switch c.Query("content_type"){
-		case "json":
+		//log.Println("contentType",c.Request.Header.Get("Accept"))
+		if strings.Contains(c.Request.Header.Get("Accept"),"json"){
 			var where []string
 			var val []interface{}
 
@@ -127,7 +130,7 @@ func loadRouter(){
 			c.JSON(http.StatusOK, gin.H{"ens":ens})
 			return
 
-		default:
+		}else{
 			c.JSON(http.StatusNotFound,nil)
 			//c.HTML(http.StatusOK,"show.tmpl",nil)
 			return
@@ -158,7 +161,7 @@ func GetEntryArr(c *gin.Context,where []string,val []interface{}) (ens []*Entry,
 	}
 	if end  > 0 {
 		where = append(where,"baseTime <= ?")
-		val = append(val,begin)
+		val = append(val,end)
 	}
 	val = append(val,limit,offset)
 	var sql_  string

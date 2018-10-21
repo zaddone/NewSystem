@@ -17,8 +17,8 @@
 	  <div class="modal-dialog modal-lg">
 	    <div class="modal-content">
 		<form id="search_form" action="/" method="get" >
-		<input type="hidden" name="limit"  value=20>
-		<input type="hidden" name="offset"  value=0 >
+		<input type="hidden" name="limit" id="limit"  value=20>
+		<input type="hidden" name="offset" id="offset"  value=0 >
 		<input type="hidden" name="begin" id="beginDate" value=0>
 		<input type="hidden" name="end"  id="endDate"  value=0 >
 		<div class="modal-header">
@@ -49,7 +49,7 @@
 		</div>
 		<div class="modal-footer form-inline">
 		<div class="form-group">
-		  <select class="selectpicker" multiple data-live-search="true" data-live-search-placeholder="Search">		    
+		  <select class="selectpicker" multiple data-live-search="true" data-live-search-placeholder="Search" name="tag">		    
 		      <option>option1</option>
 		      <option>option2</option>
 		      <option>option3</option>
@@ -58,12 +58,16 @@
 		</div>
 
 		<div class="input-group">
-		  <input type="text" class="form-control" placeholder="Search" name="q">
+		  <input type="text" class="form-control" placeholder="Search" name="key">
 
 		  <div class="input-group-btn">
 		    <button class="btn btn-dark" id="submit_button" ><i class="fa fa-search"></i></button>
 		  </div>
-		</div>
+		  <div class="input-group-btn">
+		    <a class="btn btn-light" id="download_button" download="downlaod.csv" href="#" ><i class="fa fa-download"></i></a>
+		  </div>
+
+		</div>	
 
 	    </div>
 	   </form>
@@ -121,30 +125,51 @@
 	  </div>
 	</div>
 <script>
-	function getUrlVal(para){ 
-		var search=location.search; 
-		var arrPara=new Array();
-		var arrVal=new Array();
-		if(search!=""){
-			var index=0; search=search.substr(1);
-			arrPara=search.split("&"); 
-			for(i in arrPara){ 
-				var paraPre=para+"="; 
-				if(arrPara[i].indexOf(paraPre)==0 && paraPre.length < arrPara[i].length){
-					arrVal[index]=decodeURI(arrPara[i].substr(paraPre.length)); 
-					index++; 
-				}
-			} 
+	function RequestHand(str){
+		var theRequest = new Map();                  
+		str.split("&").forEach(function(_s){
+		    [k,v] = _s.split("=");
+		    if (!v){
+			return;
+		    }
+		    _req = theRequest[k];
+		    if (_req){
+			theRequest[k] = [_req,unescape(v)];
+		    }else{
+		        theRequest[k] = unescape(v);
+		    }
+		});	
+		var be = theRequest['begin'];
+		var en = theRequest['end'];
+		$('#beginDate').val(be);
+		$('#endDate').val(en);
+		if (be>0){
+			$('#begin').val((new Date($('#beginDate').val()*1000)).format("yyyy-MM-dd"));
 		}
-		if(arrVal.length==1){ 
-			return arrVal[0]; 
-		}else if(arrVal.length==0){ 
-			return null; 
-		}else{ 
-			return arrVal; 
-		}
+		if (en>0){
+			$('#end').val((new Date($('#endDate').val()*1000)).format("yyyy-MM-dd"));
+		}			       
+		return theRequest;
 	}
-
+	var UrlRequest =  function(){
+		str = location.search.substr(1);
+		if (str) {
+                	return RequestHand(str)
+		}
+        }()
+	function show(Req,callback){		
+		$.ajax({url:'/show',
+			async:false,
+			data:Req,
+			dataType:'json',
+			success:function(data) {			
+				if (callback(data)){
+					show(Req,callback);
+				}
+			}
+		});
+	}
+	//var UrlRequest = getUrlRequest();
 	Date.prototype.format = function(format) {
 		var date = { "M+": this.getMonth() + 1, "d+": this.getDate(), "h+": this.getHours(), "m+": this.getMinutes(), "s+": this.getSeconds(), "q+": Math.floor((this.getMonth() + 3) / 3), "S+": this.getMilliseconds() }; 
 		if (/(y+)/i.test(format)) { 
@@ -157,10 +182,10 @@
 		} 
 		return format; 
 	}
-
 	$(function(){
 
-		
+
+	
 		//console.log(getUrlVal('site') );
 		var sitesMap = new Map();
 		$.getJSON('/sites',{'content_type':'json'},function(data) {
@@ -170,7 +195,7 @@
 				$('#siteselect').append('<option value='+db.Id+'>'+db.name+'</option>'); 				
 			})
 			 
-			$('#siteselect').selectpicker('val',getUrlVal('site'));
+			$('#siteselect').selectpicker('val',UrlRequest['site']);
 			 
 			$('#siteselect').selectpicker('refresh');
 			
@@ -222,19 +247,38 @@
 			$('#offset').val(0);
 			//alert($("#search_form").serialize());
     			$("#search_form").submit();
-  		});  
-		var be = getUrlVal('begin');
-		var en = getUrlVal('end');
-		$('#beginDate').val(be);
-		$('#endDate').val(en);
-		if (be>0){
-			$('#begin').val((new Date($('#beginDate').val()*1000)).format("yyyy-MM-dd"));
-		}
-		if (en>0){
-			$('#end').val((new Date($('#endDate').val()*1000)).format("yyyy-MM-dd"));
-		}
-
+  		});
+		$("#download_button").click(function(){
+			var BOM = '\uFEFF';
+			Req = RequestHand($("#search_form").serialize());
+			//alert($("#search_form").serialize());
+			Req['offset']=0;
+			var file_str = 'data:text/csv;charset=utf-8,'+BOM;
+			
+			show(Req,function(data){
+				en = data.ens;
+				if (!en){
+					
+					return false;
+				}
+				en.forEach(function(db){
+					file_str += encodeURIComponent((new Date(db.baseTime*1000)).toLocaleDateString()+','+db.title+','+db.url+'\n');
+					//this.href = (encodeURIComponent(db.title)+','+db.url);
+					Req['offset']++;
+				});
+				
+				return true;
+			});
+			this.href = file_str;
+			//alert(Req['offset']);
+			
+		});
+	
+		//$('#limit').val(UrlRequest['limit']);
+		//$('#offset').val(UrlRequest['offset']);
 	});
+
+ 
 	</script>
 	
 {{end}}
